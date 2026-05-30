@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>科目三灯光模拟考试</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", Arial, sans-serif;
+      background: linear-gradient(135deg, #eef2ff, #f8fafc);
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 18px;
+      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
+    }
+
+    h1 {
+      text-align: center;
+      margin: 0 0 12px;
+      color: #111827;
+    }
+
+    .desc {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 28px;
+      line-height: 1.8;
+    }
+
+    .panel {
+      padding: 18px;
+      margin-bottom: 22px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      line-height: 1.8;
+    }
+
+    .question {
+      padding: 18px;
+      margin-bottom: 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fafafa;
+    }
+
+    .question-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 14px;
+      font-size: 16px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      outline: none;
+      background: #fff;
+    }
+
+    input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
+
+    .result {
+      margin-top: 10px;
+      font-size: 15px;
+      min-height: 22px;
+    }
+
+    .correct {
+      color: #16a34a;
+      font-weight: 700;
+    }
+
+    .wrong {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      background: #2563eb;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .secondary {
+      background: #64748b;
+    }
+
+    .secondary:hover {
+      background: #475569;
+    }
+
+    .score {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #111827;
+    }
+
+    .tips {
+      margin-top: 24px;
+      padding: 16px;
+      background: #f8fafc;
+      border-left: 5px solid #2563eb;
+      border-radius: 10px;
+      line-height: 1.8;
+      color: #475569;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        margin: 16px;
+        padding: 20px;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>科目三灯光模拟考试</h1>
+
+    <div class="desc">
+      根据播报的驾驶场景，在输入框中填写对应灯光操作。<br />
+      第 1 条和第 14 条必考，中间随机抽取 5 条。
+    </div>
+
+    <div class="panel">
+      <strong>答题提示：</strong>可填写“近光灯”“远光灯”“远近光交替”“示廓灯+双闪”“关闭所有灯光”等。
+    </div>
+
+    <div id="exam"></div>
+
+    <div class="buttons">
+      <button onclick="submitExam()">提交答案</button>
+      <button class="secondary" onclick="showAnswers()">显示答案</button>
+      <button class="secondary" onclick="startExam()">重新开始</button>
+    </div>
+
+    <div id="score" class="score"></div>
+
+    <div class="tips">
+      <strong>考试规则：</strong>请在播报后 5 秒内完成灯光操作。这里用填空方式模拟练习，方便记忆每种场景对应的灯光。
+    </div>
+  </div>
+
+  <script>
+    const mustStart = {
+      text: "请开启前照灯",
+      answer: ["开大灯", "开启前照灯", "前照灯", "大灯", "开启大灯"]
+    };
+
+    const mustEnd = {
+      text: "模拟夜间灯光考试结束，请在关闭所有灯光后起步",
+      answer: ["关闭所有灯光", "关灯", "关闭灯光", "关闭大灯"]
+    };
+
+    const questionPool = [
+      { text: "同方向近距离跟车行驶", answer: ["近光灯"] },
+      { text: "夜间与机动车会车", answer: ["近光灯"] },
+      { text: "夜间在有信号灯控制的路口转弯", answer: ["近光灯"] },
+      { text: "夜间在有路灯，照明良好的道路行驶", answer: ["近光灯"] },
+      { text: "夜间在无照明的道路行驶", answer: ["远光灯"] },
+      { text: "夜间路边临时停车", answer: ["示廓灯+双闪", "示廓灯双闪", "示廓灯和双闪", "双闪+示廓灯"] },
+      { text: "夜间超越前方车辆", answer: ["远近光交替", "远近交替", "远近光交替闪灯"] },
+      { text: "夜间通过急弯", answer: ["远近光交替", "远近交替", "远近光交替闪灯"] },
+      { text: "夜间通过坡路", answer: ["远近光交替", "远近交替", "远近光交替闪灯"] },
+      { text: "夜间通过拱桥", answer: ["远近光交替", "远近交替", "远近光交替闪灯"] },
+      { text: "夜间通过人行横道", answer: ["远近光交替", "远近交替", "远近光交替闪灯"] },
+      { text: "夜间通过无信号灯控制的路口", answer: ["远近光交替", "远近交替", "远近光交替闪灯"] }
+    ];
+
+    let currentQuestions = [];
+
+    function startExam() {
+      const shuffled = [...questionPool].sort(() => Math.random() - 0.5);
+      const randomFive = shuffled.slice(0, 5);
+      currentQuestions = [mustStart, ...randomFive, mustEnd];
+
+      document.getElementById("score").innerHTML = "";
+      document.getElementById("exam").innerHTML = currentQuestions.map((q, index) => `
+        <div class="question">
+          <div class="question-title">${index + 1}. ${q.text}</div>
+          <input type="text" id="answer-${index}" placeholder="请输入对应灯光操作" autocomplete="off" />
+          <div class="result" id="result-${index}"></div>
+        </div>
+      `).join("");
+    }
+
+    function normalize(text) {
+      return text
+        .replace(/\s/g, "")
+        .replace(/＋/g, "+")
+        .replace(/和/g, "+")
+        .replace(/，/g, "")
+        .replace(/,/g, "")
+        .trim();
+    }
+
+    function submitExam() {
+      let correctCount = 0;
+
+      currentQuestions.forEach((q, index) => {
+        const input = document.getElementById(`answer-${index}`);
+        const result = document.getElementById(`result-${index}`);
+        const userAnswer = normalize(input.value);
+        const isCorrect = q.answer.some(ans => normalize(ans) === userAnswer);
+
+        if (isCorrect) {
+          correctCount++;
+          result.innerHTML = "回答正确";
+          result.className = "result correct";
+        } else {
+          result.innerHTML = `回答错误，正确答案：${q.answer[0]}`;
+          result.className = "result wrong";
+        }
+      });
+
+      document.getElementById("score").innerHTML = `得分：${correctCount} / ${currentQuestions.length}`;
+    }
+
+    function showAnswers() {
+      currentQuestions.forEach((q, index) => {
+        const result = document.getElementById(`result-${index}`);
+        result.innerHTML = `正确答案：${q.answer[0]}`;
+        result.className = "result correct";
+      });
+    }
+
+    startExam();
+  </script>
+</body>
+</html>
